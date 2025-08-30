@@ -13,33 +13,30 @@ typedef struct {
     mqtt_client_t* mqtt_client_inst;
     ip_addr_t mqtt_server_address;
     bool is_connected;
-    const mqtt_config_t* user_config; // <--- ADICIONE ESTA LINHA
-    mqtt_message_callback_t user_callback; // Armazena o callback do usuário
+    const mqtt_config_t* user_config;
+    mqtt_message_callback_t user_callback;
     char incoming_topic[128];
     char incoming_payload[1024];
     int payload_pos;
 } mqtt_state_t;
-// --- Variável de Estado Global Estática (Privada) ---
+
 static mqtt_state_t g_state = {0};
 
-// --- Funções de Callback Internas do LwIP ---
+// --- Callbacks internos do LwIP ---
 
 static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len) {
-    // Inicia o recebimento de uma nova mensagem
     strncpy(g_state.incoming_topic, topic, sizeof(g_state.incoming_topic) - 1);
     g_state.incoming_topic[sizeof(g_state.incoming_topic) - 1] = '\0';
     g_state.payload_pos = 0;
 }
 
 static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags) {
-    // Recebe pedaços (chunks) da mensagem
     if (g_state.payload_pos + len < sizeof(g_state.incoming_payload)) {
         memcpy(&g_state.incoming_payload[g_state.payload_pos], data, len);
         g_state.payload_pos += len;
     }
 
     if (flags & MQTT_DATA_FLAG_LAST) {
-        // Mensagem completa recebida, chama o callback do usuário
         g_state.incoming_payload[g_state.payload_pos] = '\0';
         if (g_state.user_callback) {
             g_state.user_callback(g_state.incoming_topic, g_state.incoming_payload);
@@ -51,7 +48,6 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection
     if (status == MQTT_CONNECT_ACCEPTED) {
         printf("MQTT conectado com sucesso!\n");
         g_state.is_connected = true;
-        // Configura os callbacks para mensagens recebidas
         mqtt_set_inpub_callback(client, mqtt_incoming_publish_cb, mqtt_incoming_data_cb, arg);
     } else {
         printf("Falha na conexão MQTT, status: %d\n", status);
@@ -59,8 +55,7 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection
     }
 }
 
-// --- Funções Auxiliares Internas ---
-
+// --- Auxiliares internas ---
 static void start_mqtt_client(void) {
     struct mqtt_connect_client_info_t ci = {0};
     ci.client_id = g_state.user_config->client_id;
@@ -89,15 +84,13 @@ static void dns_found_cb(const char *name, const ip_addr_t *ipaddr, void *arg) {
     }
 }
 
-// --- Implementação da API Pública ---
-
+// --- Implementação da API ---
 bool mqtt_service_connect(const mqtt_config_t* config) {
     if (cyw43_arch_init()) {
         printf("Falha ao inicializar CYW43\n");
         return false;
     }
 
-    // Armazena a configuração do usuário e o callback
     g_state.user_config = config;
     g_state.user_callback = config->on_message_callback;
 
@@ -115,22 +108,24 @@ bool mqtt_service_connect(const mqtt_config_t* config) {
     return true;
 }
 
-bool mqtt_service_publish(const char* topic, const char* payload, bool retain) {
+bool mqtt_service_publish(const char* topic, const char* payload, int qos, bool retain) {
     if (!g_state.is_connected) {
         return false;
     }
+    if (qos < 0 || qos > 2) qos = g_state.user_config->default_qos; // fallback
     cyw43_arch_lwip_begin();
-    mqtt_publish(g_state.mqtt_client_inst, topic, payload, strlen(payload), 1, retain, NULL, NULL);
+    mqtt_publish(g_state.mqtt_client_inst, topic, payload, strlen(payload), qos, retain, NULL, NULL);
     cyw43_arch_lwip_end();
     return true;
 }
 
-bool mqtt_service_subscribe(const char* topic) {
+bool mqtt_service_subscribe(const char* topic, int qos) {
     if (!g_state.is_connected) {
         return false;
     }
+    if (qos < 0 || qos > 2) qos = g_state.user_config->default_qos; // fallback
     cyw43_arch_lwip_begin();
-    mqtt_subscribe(g_state.mqtt_client_inst, topic, 1, NULL, NULL);
+    mqtt_subscribe(g_state.mqtt_client_inst, topic, qos, NULL, NULL);
     cyw43_arch_lwip_end();
     return true;
 }
