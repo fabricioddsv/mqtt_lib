@@ -28,6 +28,21 @@
 #endif // MQTT_CERT_INC
 
 // This defaults to 4
+//#define MQTT_REQ_MAX_IN_FLIGHT 5
+
+// >>> ADICIONE/CONFIRME ESTES TAMANHOS <<<
+#ifndef MQTT_OUTPUT_RINGBUF_SIZE
+#define MQTT_OUTPUT_RINGBUF_SIZE 512
+#endif
+
+#ifndef MQTT_VAR_HEADER_BUFFER_LEN
+#define MQTT_VAR_HEADER_BUFFER_LEN 256
+#endif
+
+// Mantém o que você já tinha:
+#ifndef MQTT_REQ_MAX_IN_FLIGHT
 #define MQTT_REQ_MAX_IN_FLIGHT 5
+#endif
+
 
 #endif

@@ -4,22 +4,22 @@
 
 
 // --- Credenciais da Rede Wi-Fi ---
-#define WIFI_SSID       "SEU_WIFI_SSID"       // Nome da sua rede Wi-Fi (SSID)
-#define WIFI_PASSWORD   "SUA_SENHA_WIFI"      // Senha da sua rede Wi-Fi
+#define WIFI_SSID       "tarefa-mqtt"       // Nome da sua rede Wi-Fi (SSID)
+#define WIFI_PASSWORD   "laica@2025"      // Senha da sua rede Wi-Fi
 
 // --- Configurações do Broker MQTT ---
-#define MQTT_SERVER     "endereco_do_broker"  // Endereço IP ou hostname do seu broker MQTT
-#define MQTT_CLIENT_ID  "pico_w_client_01"    // ID único para este cliente. Mude se tiver mais Picos.
-#define MQTT_USERNAME   "seu_usuario_mqtt"    // Usuário para autenticação no broker (deixe "" se não usar)
-#define MQTT_PASSWORD   "sua_senha_mqtt"      // Senha para autenticação no broker (deixe "" se não usar)
-#define MQTT_QOS        1                     // Nível de Qualidade de Serviço padrão (0, 1 ou 2)
+#define MQTT_SERVER     "mqtt.iot.natal.br"  // Endereço IP ou hostname do seu broker MQTT
+#define MQTT_CLIENT_ID  "pico_w_client_fabricio.silva"    // ID único para este cliente. Mude se tiver mais Picos.
+#define MQTT_USERNAME   "desafio15"    // Usuário para autenticação no broker (deixe "" se não usar)
+#define MQTT_PASSWORD   "desafio15.laica"      // Senha para autenticação no broker (deixe "" se não usar)
+#define MQTT_QOS        0                     // Nível de Qualidade de Serviço padrão (0, 1 ou 2)
 
 // --- Tópicos MQTT ---
 // Tópico para receber comandos (ex: controlar o LED)
-#define MQTT_TOPIC_COMMAND "pico/sala/led/set"
+#define MQTT_TOPIC_COMMAND "ha/desafio15/fabricio.silva/set"
 
 // Tópico para publicar status (ex: enviar um timestamp ou leitura de sensor)
-#define MQTT_TOPIC_STATUS  "pico/sala/status"
+#define MQTT_TOPIC_STATUS  "ha/desafio15/fabricio.silva/mpu6050"
 
 
 // Callback chamado quando chega uma mensagem MQTT
@@ -81,6 +81,7 @@ int main() {
             if (time_us_32() - last_publish_time > 10 * 1000 * 1000) {
                 last_publish_time = time_us_32();
                 char message[32];
+                
                 snprintf(message, sizeof(message), "Timestamp: %u", last_publish_time);
 
                 // Usando o tópico de status de config.h
